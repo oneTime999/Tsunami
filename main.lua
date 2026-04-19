@@ -11,12 +11,10 @@ local Window = Rayfield:CreateWindow({
 })
 
 local ESPTab = Window:CreateTab("ESP", "eye")
-local AimTab = Window:CreateTab("Aim", "crosshair")
 local MiscTab = Window:CreateTab("Misc", "settings")
 
 local players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local camera = workspace.CurrentCamera
 
 local plr = players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
@@ -182,97 +180,6 @@ ESPTab:CreateToggle({
     end
 })
 
-local aimTarget = nil
-local viewConnection = nil
-local viewEnabled = false
-
-local function getPlayerList()
-    local list = {}
-    for _, p in pairs(players:GetPlayers()) do
-        if p ~= plr then
-            table.insert(list, p.Name)
-        end
-    end
-    if #list == 0 then
-        table.insert(list, "No players")
-    end
-    return list
-end
-
-local function stopView()
-    viewEnabled = false
-    if viewConnection then
-        viewConnection:Disconnect()
-        viewConnection = nil
-    end
-    camera.CameraType = Enum.CameraType.Custom
-    camera.CameraSubject = plr.Character and plr.Character:FindFirstChildWhichIsA("Humanoid")
-end
-
-local function startView()
-    local target = players:FindFirstChild(aimTarget)
-    if not target or not target.Character then return end
-    local head = target.Character:FindFirstChild("Head")
-    if not head then return end
-
-    viewEnabled = true
-    camera.CameraType = Enum.CameraType.Scriptable
-
-    viewConnection = RunService.RenderStepped:Connect(function()
-        if not viewEnabled then return end
-        local t = players:FindFirstChild(aimTarget)
-        if t and t.Character then
-            local h = t.Character:FindFirstChild("Head")
-            if h then
-                camera.CFrame = h.CFrame
-            end
-        else
-            stopView()
-        end
-    end)
-end
-
-local playerList = getPlayerList()
-aimTarget = playerList[1]
-
-local AimDropdown = AimTab:CreateDropdown({
-    Name = "Select Player",
-    Options = playerList,
-    CurrentOption = {playerList[1]},
-    Flag = "AimTarget",
-    Callback = function(value)
-        aimTarget = value
-    end
-})
-
-AimTab:CreateButton({
-    Name = "Refresh Player List",
-    Callback = function()
-        local updated = getPlayerList()
-        aimTarget = updated[1]
-        AimDropdown:Set(updated[1])
-        Rayfield:Notify({
-            Title = "Slow Hub",
-            Content = "Player list updated!",
-            Duration = 2,
-            Image = 4483362458,
-        })
-    end
-})
-
-AimTab:CreateToggle({
-    Name = "View Player Head",
-    CurrentValue = false,
-    Flag = "ViewHead",
-    Callback = function(value)
-        if value then
-            startView()
-        else
-            stopView()
-        end
-    end
-})
-
 local Noclipping = nil
 MiscTab:CreateToggle({
     Name = "Noclip",
@@ -342,6 +249,15 @@ MiscTab:CreateButton({
     Callback = function()
         hum:SetAttribute("MaxStamina", math.huge)
         hum:SetAttribute("Stamina", math.huge)
+    end
+})
+
+MiscTab:CreateButton({
+    Name = "Inf Bag",
+    Callback = function()
+        hum:SetAttribute("BagSize", math.huge)
+        hum:SetAttribute("MaxBagSize", math.huge)
+        hum:SetAttribute("InventorySize", math.huge)
     end
 })
 
