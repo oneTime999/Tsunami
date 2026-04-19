@@ -4,15 +4,15 @@ local Window = Rayfield:CreateWindow({
     Name = "Slow Hub",
     Icon = 0,
     LoadingTitle = "Slow Hub",
-    LoadingSubtitle = "by Slow Hub Team",
+    LoadingSubtitle = "by oneTime.999",
     Theme = "Default",
     DisableRayfieldPrompts = false,
     DisableBuildWarnings = false,
 })
 
-local ESPTab = Window:CreateTab("Esp", "Eye")
-local AimTab = Window:CreateTab("Aim", "Crosshair")
-local MiscTab = Window:CreateTab("Misc", "Settings")
+local ESPTab = Window:CreateTab("ESP", "eye")
+local AimTab = Window:CreateTab("Aim", "crosshair")
+local MiscTab = Window:CreateTab("Misc", "settings")
 
 local players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -183,10 +183,8 @@ ESPTab:CreateToggle({
 })
 
 local aimTarget = nil
-local aimEnabled = false
-local aimConnection = nil
-local originalCameraType = camera.CameraType
-local originalCameraSubject = camera.CameraSubject
+local viewConnection = nil
+local viewEnabled = false
 
 local function getPlayerList()
     local list = {}
@@ -201,60 +199,76 @@ local function getPlayerList()
     return list
 end
 
+local function stopView()
+    viewEnabled = false
+    if viewConnection then
+        viewConnection:Disconnect()
+        viewConnection = nil
+    end
+    camera.CameraType = Enum.CameraType.Custom
+    camera.CameraSubject = plr.Character and plr.Character:FindFirstChildWhichIsA("Humanoid")
+end
+
+local function startView()
+    local target = players:FindFirstChild(aimTarget)
+    if not target or not target.Character then return end
+    local head = target.Character:FindFirstChild("Head")
+    if not head then return end
+
+    viewEnabled = true
+    camera.CameraType = Enum.CameraType.Scriptable
+
+    viewConnection = RunService.RenderStepped:Connect(function()
+        if not viewEnabled then return end
+        local t = players:FindFirstChild(aimTarget)
+        if t and t.Character then
+            local h = t.Character:FindFirstChild("Head")
+            if h then
+                camera.CFrame = h.CFrame
+            end
+        else
+            stopView()
+        end
+    end)
+end
+
 local playerList = getPlayerList()
+aimTarget = playerList[1]
 
 local AimDropdown = AimTab:CreateDropdown({
     Name = "Select Player",
     Options = playerList,
-    CurrentOption = playerList[1],
+    CurrentOption = {playerList[1]},
     Flag = "AimTarget",
     Callback = function(value)
         aimTarget = value
     end
 })
 
-aimTarget = playerList[1]
-
-players.PlayerAdded:Connect(function()
-    local updated = getPlayerList()
-    AimDropdown:Refresh(updated, updated[1])
-end)
-
-players.PlayerRemoving:Connect(function()
-    local updated = getPlayerList()
-    AimDropdown:Refresh(updated, updated[1])
-end)
+AimTab:CreateButton({
+    Name = "Refresh Player List",
+    Callback = function()
+        local updated = getPlayerList()
+        aimTarget = updated[1]
+        AimDropdown:Set(updated[1])
+        Rayfield:Notify({
+            Title = "Slow Hub",
+            Content = "Player list updated!",
+            Duration = 2,
+            Image = 4483362458,
+        })
+    end
+})
 
 AimTab:CreateToggle({
-    Name = "Camera Lock (Head)",
+    Name = "View Player Head",
     CurrentValue = false,
-    Flag = "AimLock",
+    Flag = "ViewHead",
     Callback = function(value)
-        aimEnabled = value
         if value then
-            originalCameraType = camera.CameraType
-            originalCameraSubject = camera.CameraSubject
-            camera.CameraType = Enum.CameraType.Scriptable
-
-            aimConnection = RunService.RenderStepped:Connect(function()
-                if not aimEnabled then return end
-                local target = players:FindFirstChild(aimTarget)
-                if target and target.Character then
-                    local head = target.Character:FindFirstChild("Head")
-                    local rootPart = char and char:FindFirstChild("HumanoidRootPart")
-                    if head and rootPart then
-                        local direction = (head.Position - rootPart.Position).Unit
-                        camera.CFrame = CFrame.new(rootPart.Position + Vector3.new(0, 1.5, 0), head.Position)
-                    end
-                end
-            end)
+            startView()
         else
-            if aimConnection then
-                aimConnection:Disconnect()
-                aimConnection = nil
-            end
-            camera.CameraType = Enum.CameraType.Custom
-            camera.CameraSubject = plr.Character and plr.Character:FindFirstChildWhichIsA("Humanoid")
+            stopView()
         end
     end
 })
