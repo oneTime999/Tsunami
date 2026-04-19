@@ -10,8 +10,8 @@ local Window = Rayfield:CreateWindow({
     DisableBuildWarnings = false,
 })
 
-local ESPTab = Window:CreateTab("ESP", "eye")
-local MiscTab = Window:CreateTab("Misc", "settings")
+local ESPTab = Window:CreateTab("Esp", "Eye")
+local MiscTab = Window:CreateTab("Misc", "Settings")
 
 local players = game:GetService("Players")
 local RunService = game:GetService("RunService")
