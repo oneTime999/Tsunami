@@ -60,7 +60,7 @@ local function createESP(obj)
     local text = Instance.new("TextLabel")
     text.Size = UDim2.new(1, 0, 1, 0)
     text.BackgroundTransparency = 1
-    text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    text.TextColor3 = Color3.fromRGB(255, 255, 0)
     text.TextStrokeTransparency = 0
     text.Text = obj.Name .. " : " .. tostring(toolType)
     text.Parent = bgui
