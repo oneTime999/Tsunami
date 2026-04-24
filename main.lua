@@ -39,11 +39,9 @@ end
 local function createESP(obj)
     local toolType = obj:GetAttribute("ToolType")
     if not toolType then return end
+    if obj:FindFirstChild("ESP_Folder") then return end
 
-    local folder = obj:FindFirstChild("ESP_Folder")
-    if folder then return end
-
-    folder = Instance.new("Folder")
+    local folder = Instance.new("Folder")
     folder.Name = "ESP_Folder"
     folder.Parent = obj
     table.insert(ESPFolders, folder)
@@ -69,8 +67,9 @@ local function createESP(obj)
     highlight.Name = "ToolHighlight"
     highlight.FillColor = Color3.fromRGB(255, 255, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.OutlineTransparency = 1
+    highlight.OutlineTransparency = 0
     highlight.FillTransparency = 0.7
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = obj
     highlight.Parent = folder
 end
@@ -87,11 +86,9 @@ end
 
 local function createPlayerESP(player)
     if not (player.Character and player.Character:FindFirstChildWhichIsA("Humanoid")) then return end
+    if player.Character:FindFirstChild("PlayerESP_Folder") then return end
 
-    local folder = player.Character:FindFirstChild("PlayerESP_Folder")
-    if folder then return end
-
-    folder = Instance.new("Folder")
+    local folder = Instance.new("Folder")
     folder.Name = "PlayerESP_Folder"
     folder.Parent = player.Character
     table.insert(PlayerESPs, folder)
@@ -117,8 +114,9 @@ local function createPlayerESP(player)
     highlight.Name = "PlayerHighlight"
     highlight.FillColor = Color3.fromRGB(0, 255, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0
     highlight.FillTransparency = 0.7
-    highlight.OutlineTransparency = 1
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = player.Character
     highlight.Parent = folder
 end
@@ -189,8 +187,9 @@ local function createZombieESP(model)
     highlight.Name = "ZombieHighlight"
     highlight.FillColor = Color3.fromRGB(0, 100, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.OutlineTransparency = 1
+    highlight.OutlineTransparency = 0
     highlight.FillTransparency = 0.7
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = model
     highlight.Parent = folder
 end
@@ -227,8 +226,9 @@ local function createProjectDeltaESP(model)
     highlight.Name = "ProjectDeltaHighlight"
     highlight.FillColor = Color3.fromRGB(255, 0, 255)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.OutlineTransparency = 1
+    highlight.OutlineTransparency = 0
     highlight.FillTransparency = 0.7
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = model
     highlight.Parent = folder
 end
@@ -266,8 +266,9 @@ local function createProjectBetaESP(model)
     highlight.Name = "ProjectBetaHighlight"
     highlight.FillColor = Color3.fromRGB(0, 0, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.OutlineTransparency = 1
+    highlight.OutlineTransparency = 0
     highlight.FillTransparency = 0.7
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = model
     highlight.Parent = folder
 end
@@ -304,8 +305,9 @@ local function createProjectAlphaESP(model)
     highlight.Name = "ProjectAlphaHighlight"
     highlight.FillColor = Color3.fromRGB(255, 165, 0)
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    highlight.OutlineTransparency = 1
+    highlight.OutlineTransparency = 0
     highlight.FillTransparency = 0.7
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = model
     highlight.Parent = folder
 end
@@ -381,9 +383,6 @@ end
 local playerESPUpdate = nil
 local ZombieESPUpdate = nil
 local ProjectESPUpdate = nil
-local InfStaminaLoop = nil
-local InfBagLoop = nil
-local LandminesLoop = nil
 
 ESPTab:CreateToggle({
     Name = "Items ESP",
@@ -635,75 +634,39 @@ MiscTab:CreateToggle({
     end
 })
 
-MiscTab:CreateToggle({
+MiscTab:CreateButton({
     Name = "Visible Landmines",
-    CurrentValue = false,
-    Flag = "VisibleLandmines",
-    Callback = function(value)
-        if value then
-            if LandminesLoop then LandminesLoop:Disconnect() end
-            LandminesLoop = RunService.Heartbeat:Connect(function()
-                local mineField = workspace:FindFirstChild("Minefield")
-                if mineField then
-                    for _, part in pairs(mineField:GetChildren()) do
-                        if part.Name == "Landmine" then
-                            part.Transparency = 0
-                        end
-                    end
+    Callback = function()
+        local mineField = workspace:FindFirstChild("Minefield")
+        if mineField then
+            for _, part in pairs(mineField:GetChildren()) do
+                if part.Name == "Landmine" then
+                    part.Transparency = 0
                 end
-            end)
-        else
-            if LandminesLoop then
-                LandminesLoop:Disconnect()
-                LandminesLoop = nil
             end
         end
     end
 })
 
-MiscTab:CreateToggle({
+MiscTab:CreateButton({
     Name = "Inf Stamina",
-    CurrentValue = false,
-    Flag = "InfStamina",
-    Callback = function(value)
-        if value then
-            if InfStaminaLoop then InfStaminaLoop:Disconnect() end
-            InfStaminaLoop = RunService.Heartbeat:Connect(function()
-                local h = getHum()
-                if h then
-                    h:SetAttribute("MaxStamina", math.huge)
-                    h:SetAttribute("Stamina", math.huge)
-                end
-            end)
-        else
-            if InfStaminaLoop then
-                InfStaminaLoop:Disconnect()
-                InfStaminaLoop = nil
-            end
+    Callback = function()
+        local h = getHum()
+        if h then
+            h:SetAttribute("MaxStamina", math.huge)
+            h:SetAttribute("Stamina", math.huge)
         end
     end
 })
 
-MiscTab:CreateToggle({
+MiscTab:CreateButton({
     Name = "Inf Bag",
-    CurrentValue = false,
-    Flag = "InfBag",
-    Callback = function(value)
-        if value then
-            if InfBagLoop then InfBagLoop:Disconnect() end
-            InfBagLoop = RunService.Heartbeat:Connect(function()
-                local h = getHum()
-                if h then
-                    h:SetAttribute("BagSize", math.huge)
-                    h:SetAttribute("MaxBagSize", math.huge)
-                    h:SetAttribute("InventorySize", math.huge)
-                end
-            end)
-        else
-            if InfBagLoop then
-                InfBagLoop:Disconnect()
-                InfBagLoop = nil
-            end
+    Callback = function()
+        local h = getHum()
+        if h then
+            h:SetAttribute("BagSize", math.huge)
+            h:SetAttribute("MaxBagSize", math.huge)
+            h:SetAttribute("InventorySize", math.huge)
         end
     end
 })
