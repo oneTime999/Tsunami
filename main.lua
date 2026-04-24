@@ -79,7 +79,7 @@ FireButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 FireButton.Position = UDim2.new(0.05, 0, 0.75, 0)
 FireButton.Size = UDim2.new(0.9, 0, 0, 60)
 FireButton.Font = Enum.Font.GothamBold
-FireButton.Text = "FIRE"
+FireButton.Text = "Fire"
 FireButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FireButton.TextSize = 22
 
@@ -135,27 +135,31 @@ FireButton.InputBegan:Connect(function(input)
             local tool = LocalPlayer.Backpack:FindFirstChild(SelectedWeapon) or LocalPlayer.Character:FindFirstChild(SelectedWeapon)
             
             if tool and tool:FindFirstChild("Fire") then
-                tool.Fire:FireServer(true, pos, false, 99)
+                tool.Fire:FireServer(true, pos, false, 999)
             end
         end
     end
 end)
 
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local Window = Rayfield:CreateWindow({
-    Name = "Slow Hub",
-    Icon = 0,
-    LoadingTitle = "Slow Hub",
-    LoadingSubtitle = "by oneTime.999",
-    Theme = "Default",
-    DisableRayfieldPrompts = false,
-    DisableBuildWarnings = false,
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Slow Hub",
+    SubTitle = "by oneTime.999",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.RightShift
 })
 
-local ESPTab = Window:CreateTab("ESP", "eye")
-local MiscTab = Window:CreateTab("Misc", "settings")
+local ESPTab = Window:AddTab({ Title = "ESP", Icon = "eye" })
+local MiscTab = Window:AddTab({ Title = "Misc", Icon = "settings" })
+local CombatTab = Window:AddTab({ Title = "Combat", Icon = "crosshair" })
+
+local Options = Fluent.Options
 
 local players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -528,22 +532,17 @@ local playerESPUpdate = nil
 local ZombieESPUpdate = nil
 local ProjectESPUpdate = nil
 
-ESPTab:CreateToggle({
-    Name = "Items ESP",
-    CurrentValue = false,
-    Flag = "ItemESP",
-    Callback = function(value)
-        if value then
-            for _, item in pairs(workspace:GetChildren()) do
-                createESP(item)
-            end
-            _G.ItemESPEnabled = true
-        else
-            _G.ItemESPEnabled = false
-            clearESP()
+ESPTab:AddToggle("ItemESP", { Title = "Items ESP", Default = false }):OnChanged(function(value)
+    if value then
+        for _, item in pairs(workspace:GetChildren()) do
+            createESP(item)
         end
+        _G.ItemESPEnabled = true
+    else
+        _G.ItemESPEnabled = false
+        clearESP()
     end
-})
+end)
 
 workspace.ChildAdded:Connect(function(obj)
     if _G.ItemESPEnabled then
@@ -551,235 +550,205 @@ workspace.ChildAdded:Connect(function(obj)
     end
 end)
 
-ESPTab:CreateToggle({
-    Name = "Players ESP",
-    CurrentValue = false,
-    Flag = "PlayerESP",
-    Callback = function(value)
-        if value then
-            for _, player in pairs(players:GetPlayers()) do
-                if player ~= plr then
-                    createPlayerESP(player)
-                    updatePlayerESPColor(player)
-                end
-            end
-            if not playerESPUpdate then
-                playerESPUpdate = RunService.Heartbeat:Connect(function()
-                    for _, player in pairs(players:GetPlayers()) do
-                        if player ~= plr and player.Character then
-                            local folder = player.Character:FindFirstChild("PlayerESP_Folder")
-                            if not folder then
-                                createPlayerESP(player)
-                            end
-                            updatePlayerESPColor(player)
-                        end
-                    end
-                end)
-            end
-        else
-            clearPlayerESP()
-            if playerESPUpdate then
-                playerESPUpdate:Disconnect()
-                playerESPUpdate = nil
+ESPTab:AddToggle("PlayerESP", { Title = "Players ESP", Default = false }):OnChanged(function(value)
+    if value then
+        for _, player in pairs(players:GetPlayers()) do
+            if player ~= plr then
+                createPlayerESP(player)
+                updatePlayerESPColor(player)
             end
         end
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Zombies ESP",
-    CurrentValue = false,
-    Flag = "ZombieESP",
-    Callback = function(value)
-        if value then
-            scanZombies()
-            if ZombieESPUpdate then ZombieESPUpdate:Disconnect() end
-            ZombieESPUpdate = RunService.Heartbeat:Connect(function()
-                scanZombies()
-                local f = workspace:FindFirstChild("Zombies")
-                if not f then return end
-                for _, model in pairs(f:GetChildren()) do
-                    if model:FindFirstChild("ZombieESP_Folder") then
-                        local espFolder = model:FindFirstChild("ZombieESP_Folder")
-                        local bgui = espFolder:FindFirstChild("ZombieNameESP")
-                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                        if text and humanoid then
-                            text.Text = "[ZOMBIE] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+        if not playerESPUpdate then
+            playerESPUpdate = RunService.Heartbeat:Connect(function()
+                for _, player in pairs(players:GetPlayers()) do
+                    if player ~= plr and player.Character then
+                        local folder = player.Character:FindFirstChild("PlayerESP_Folder")
+                        if not folder then
+                            createPlayerESP(player)
                         end
+                        updatePlayerESPColor(player)
                     end
                 end
             end)
-        else
-            clearZombieESP()
-            if ZombieESPUpdate then
-                ZombieESPUpdate:Disconnect()
-                ZombieESPUpdate = nil
-            end
+        end
+    else
+        clearPlayerESP()
+        if playerESPUpdate then
+            playerESPUpdate:Disconnect()
+            playerESPUpdate = nil
         end
     end
-})
+end)
 
-ESPTab:CreateToggle({
-    Name = "Project ESP",
-    CurrentValue = false,
-    Flag = "ProjectESP",
-    Callback = function(value)
-        if value then
+ESPTab:AddToggle("ZombieESP", { Title = "Zombies ESP", Default = false }):OnChanged(function(value)
+    if value then
+        scanZombies()
+        if ZombieESPUpdate then ZombieESPUpdate:Disconnect() end
+        ZombieESPUpdate = RunService.Heartbeat:Connect(function()
+            scanZombies()
+            local f = workspace:FindFirstChild("Zombies")
+            if not f then return end
+            for _, model in pairs(f:GetChildren()) do
+                if model:FindFirstChild("ZombieESP_Folder") then
+                    local espFolder = model:FindFirstChild("ZombieESP_Folder")
+                    local bgui = espFolder:FindFirstChild("ZombieNameESP")
+                    local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                    local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                    if text and humanoid then
+                        text.Text = "[ZOMBIE] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                    end
+                end
+            end
+        end)
+    else
+        clearZombieESP()
+        if ZombieESPUpdate then
+            ZombieESPUpdate:Disconnect()
+            ZombieESPUpdate = nil
+        end
+    end
+end)
+
+ESPTab:AddToggle("ProjectESP", { Title = "Project ESP", Default = false }):OnChanged(function(value)
+    if value then
+        scanProjectDelta()
+        scanProjectBeta()
+        scanProjectAlpha()
+        if ProjectESPUpdate then ProjectESPUpdate:Disconnect() end
+        ProjectESPUpdate = RunService.Heartbeat:Connect(function()
             scanProjectDelta()
             scanProjectBeta()
             scanProjectAlpha()
-            if ProjectESPUpdate then ProjectESPUpdate:Disconnect() end
-            ProjectESPUpdate = RunService.Heartbeat:Connect(function()
-                scanProjectDelta()
-                scanProjectBeta()
-                scanProjectAlpha()
 
-                local fd = workspace:FindFirstChild("Project Delta")
-                if fd then
-                    for _, model in pairs(fd:GetChildren()) do
-                        if model:FindFirstChild("ProjectDeltaESP_Folder") then
-                            local espFolder = model:FindFirstChild("ProjectDeltaESP_Folder")
-                            local bgui = espFolder:FindFirstChild("ProjectDeltaNameESP")
-                            local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                            local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                            if text and humanoid then
-                                text.Text = "[DELTA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
-                            end
+            local fd = workspace:FindFirstChild("Project Delta")
+            if fd then
+                for _, model in pairs(fd:GetChildren()) do
+                    if model:FindFirstChild("ProjectDeltaESP_Folder") then
+                        local espFolder = model:FindFirstChild("ProjectDeltaESP_Folder")
+                        local bgui = espFolder:FindFirstChild("ProjectDeltaNameESP")
+                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                        if text and humanoid then
+                            text.Text = "[DELTA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
                         end
                     end
                 end
-
-                local fb = workspace:FindFirstChild("Project Beta")
-                if fb then
-                    for _, model in pairs(fb:GetChildren()) do
-                        if model:FindFirstChild("ProjectBetaESP_Folder") then
-                            local espFolder = model:FindFirstChild("ProjectBetaESP_Folder")
-                            local bgui = espFolder:FindFirstChild("ProjectBetaNameESP")
-                            local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                            local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                            if text and humanoid then
-                                text.Text = "[BETA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
-                            end
-                        end
-                    end
-                end
-
-                local fa = workspace:FindFirstChild("Project Alpha")
-                if fa then
-                    for _, model in pairs(fa:GetChildren()) do
-                        if model:FindFirstChild("ProjectAlphaESP_Folder") then
-                            local espFolder = model:FindFirstChild("ProjectAlphaESP_Folder")
-                            local bgui = espFolder:FindFirstChild("ProjectAlphaNameESP")
-                            local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                            local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                            if text and humanoid then
-                                text.Text = "[ALPHA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
-                            end
-                        end
-                    end
-                end
-            end)
-        else
-            clearProjectDeltaESP()
-            clearProjectBetaESP()
-            clearProjectAlphaESP()
-            if ProjectESPUpdate then
-                ProjectESPUpdate:Disconnect()
-                ProjectESPUpdate = nil
             end
+
+            local fb = workspace:FindFirstChild("Project Beta")
+            if fb then
+                for _, model in pairs(fb:GetChildren()) do
+                    if model:FindFirstChild("ProjectBetaESP_Folder") then
+                        local espFolder = model:FindFirstChild("ProjectBetaESP_Folder")
+                        local bgui = espFolder:FindFirstChild("ProjectBetaNameESP")
+                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                        if text and humanoid then
+                            text.Text = "[BETA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                        end
+                    end
+                end
+            end
+
+            local fa = workspace:FindFirstChild("Project Alpha")
+            if fa then
+                for _, model in pairs(fa:GetChildren()) do
+                    if model:FindFirstChild("ProjectAlphaESP_Folder") then
+                        local espFolder = model:FindFirstChild("ProjectAlphaESP_Folder")
+                        local bgui = espFolder:FindFirstChild("ProjectAlphaNameESP")
+                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                        if text and humanoid then
+                            text.Text = "[ALPHA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                        end
+                    end
+                end
+            end
+        end)
+    else
+        clearProjectDeltaESP()
+        clearProjectBetaESP()
+        clearProjectAlphaESP()
+        if ProjectESPUpdate then
+            ProjectESPUpdate:Disconnect()
+            ProjectESPUpdate = nil
         end
     end
-})
+end)
 
 local Noclipping = nil
-MiscTab:CreateToggle({
-    Name = "Noclip",
-    CurrentValue = false,
-    Flag = "Noclip",
-    Callback = function(value)
-        if value then
-            Noclipping = RunService.Stepped:Connect(function()
-                if plr.Character then
-                    for _, child in pairs(plr.Character:GetDescendants()) do
-                        if child:IsA("BasePart") and child.CanCollide == true then
-                            child.CanCollide = false
-                        end
+MiscTab:AddToggle("Noclip", { Title = "Noclip", Default = false }):OnChanged(function(value)
+    if value then
+        Noclipping = RunService.Stepped:Connect(function()
+            if plr.Character then
+                for _, child in pairs(plr.Character:GetDescendants()) do
+                    if child:IsA("BasePart") and child.CanCollide == true then
+                        child.CanCollide = false
                     end
                 end
-            end)
-        else
-            if Noclipping then
-                Noclipping:Disconnect()
-                Noclipping = nil
             end
+        end)
+    else
+        if Noclipping then
+            Noclipping:Disconnect()
+            Noclipping = nil
         end
     end
-})
+end)
 
 local HitCooldownConnection = nil
-MiscTab:CreateToggle({
-    Name = "Remove Hit Cooldown",
-    CurrentValue = false,
-    Flag = "RmvHitCooldown",
-    Callback = function(value)
-        if value then
-            local function setup()
-                local h = getHum()
-                if not h then return end
-                if HitCooldownConnection then
-                    HitCooldownConnection:Disconnect()
-                end
-                HitCooldownConnection = h:GetAttributeChangedSignal("HitCooldown"):Connect(function()
-                    local hu = getHum()
-                    if hu then
-                        hu:SetAttribute("HitCooldown", false)
-                    end
-                end)
-            end
-            setup()
-            plr.CharacterAdded:Connect(function()
-                task.wait(0.5)
-                if Rayfield.Flags["RmvHitCooldown"].CurrentValue then
-                    setup()
-                end
-            end)
-        else
+MiscTab:AddToggle("RmvHitCooldown", { Title = "Remove Hit Cooldown", Default = false }):OnChanged(function(value)
+    if value then
+        local function setup()
+            local h = getHum()
+            if not h then return end
             if HitCooldownConnection then
                 HitCooldownConnection:Disconnect()
-                HitCooldownConnection = nil
             end
-        end
-    end
-})
-
-MiscTab:CreateToggle({
-    Name = "Remove Fall Damage",
-    CurrentValue = false,
-    Flag = "RmvFallDamage",
-    Callback = function(value)
-        local function update()
-            local c = plr.Character
-            if not c then return end
-            local falldamage = c:FindFirstChild("FallDamage")
-            if falldamage then
-                falldamage.Enabled = not value
-            end
-        end
-        update()
-        if value then
-            plr.CharacterAdded:Connect(function()
-                task.wait(0.3)
-                if Rayfield.Flags["RmvFallDamage"].CurrentValue then
-                    update()
+            HitCooldownConnection = h:GetAttributeChangedSignal("HitCooldown"):Connect(function()
+                local hu = getHum()
+                if hu then
+                    hu:SetAttribute("HitCooldown", false)
                 end
             end)
         end
+        setup()
+        plr.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if Options.RmvHitCooldown.Value then
+                setup()
+            end
+        end)
+    else
+        if HitCooldownConnection then
+            HitCooldownConnection:Disconnect()
+            HitCooldownConnection = nil
+        end
     end
-})
+end)
 
-MiscTab:CreateButton({
-    Name = "Visible Landmines",
+MiscTab:AddToggle("RmvFallDamage", { Title = "Remove Fall Damage", Default = false }):OnChanged(function(value)
+    local function update()
+        local c = plr.Character
+        if not c then return end
+        local falldamage = c:FindFirstChild("FallDamage")
+        if falldamage then
+            falldamage.Enabled = not value
+        end
+    end
+    update()
+    if value then
+        plr.CharacterAdded:Connect(function()
+            task.wait(0.3)
+            if Options.RmvFallDamage.Value then
+                update()
+            end
+        end)
+    end
+end)
+
+MiscTab:AddButton({
+    Title = "Visible Landmines",
     Callback = function()
         local mineField = workspace:FindFirstChild("Minefield")
         if mineField then
@@ -792,8 +761,8 @@ MiscTab:CreateButton({
     end
 })
 
-MiscTab:CreateButton({
-    Name = "Inf Stamina",
+MiscTab:AddButton({
+    Title = "Inf Stamina",
     Callback = function()
         local h = getHum()
         if h then
@@ -803,8 +772,8 @@ MiscTab:CreateButton({
     end
 })
 
-MiscTab:CreateButton({
-    Name = "Inf Bag",
+MiscTab:AddButton({
+    Title = "Inf Bag",
     Callback = function()
         local h = getHum()
         if h then
@@ -815,9 +784,103 @@ MiscTab:CreateButton({
     end
 })
 
-Rayfield:Notify({
+local SelectedTarget = nil
+local FireLoop = nil
+
+local function getPlayerList()
+    local list = {}
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= plr then
+            table.insert(list, player.Name)
+        end
+    end
+    return list
+end
+
+CombatTab:AddDropdown("TargetDropdown", {
+    Title = "Select Target",
+    Values = getPlayerList(),
+    Multi = false,
+    Default = nil
+}):OnChanged(function(selected)
+    SelectedTarget = players:FindFirstChild(selected)
+end)
+
+CombatTab:AddButton({
+    Title = "Refresh Players",
+    Callback = function()
+        local dropdown = Options.TargetDropdown
+        if dropdown then
+            dropdown:SetValues(getPlayerList())
+        end
+    end
+})
+
+CombatTab:AddButton({
+    Title = "Fire",
+    Callback = function()
+        if not SelectedTarget then
+            Fluent:Notify({
+                Title = "Error",
+                Content = "Select a target first!",
+                Duration = 3
+            })
+            return
+        end
+
+        if FireLoop then
+            FireLoop:Disconnect()
+            FireLoop = nil
+        end
+
+        FireLoop = RunService.Heartbeat:Connect(function()
+            if not SelectedTarget or not SelectedTarget.Character then return end
+
+            local head = SelectedTarget.Character:FindFirstChild("Head")
+            if not head then return end
+
+            local backpack = plr:FindFirstChild("Backpack")
+            if not backpack then return end
+
+            local gun = backpack:FindFirstChild("AK-74M")
+            if not gun then
+                gun = plr.Character and plr.Character:FindFirstChild("AK-74M")
+            end
+            if not gun then return end
+
+            local fireRemote = gun:FindFirstChild("Fire")
+            if not fireRemote then return end
+
+            local args = {
+                [1] = true,
+                [2] = head.Position,
+                [3] = false,
+                [4] = 12,
+            }
+
+            fireRemote:FireServer(unpack(args))
+        end)
+
+        Fluent:Notify({
+            Title = "Fire",
+            Content = "Firing at " .. SelectedTarget.Name,
+            Duration = 3
+        })
+    end
+})
+
+CombatTab:AddButton({
+    Title = "Stop Fire",
+    Callback = function()
+        if FireLoop then
+            FireLoop:Disconnect()
+            FireLoop = nil
+        end
+    end
+})
+
+Fluent:Notify({
     Title = "Slow Hub",
     Content = "Loaded successfully!",
-    Duration = 4,
-    Image = 4483362458,
+    Duration = 4
 })
