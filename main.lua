@@ -147,7 +147,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 local Window = Fluent:CreateWindow({
     Title = "Slow Hub",
-    SubTitle = "by oneTime.999",
+    SubTitle = "by Slow Hub Team",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
@@ -780,101 +780,6 @@ MiscTab:AddButton({
             h:SetAttribute("BagSize", math.huge)
             h:SetAttribute("MaxBagSize", math.huge)
             h:SetAttribute("InventorySize", math.huge)
-        end
-    end
-})
-
-local SelectedTarget = nil
-local FireLoop = nil
-
-local function getPlayerList()
-    local list = {}
-    for _, player in pairs(players:GetPlayers()) do
-        if player ~= plr then
-            table.insert(list, player.Name)
-        end
-    end
-    return list
-end
-
-CombatTab:AddDropdown("TargetDropdown", {
-    Title = "Select Target",
-    Values = getPlayerList(),
-    Multi = false,
-    Default = nil
-}):OnChanged(function(selected)
-    SelectedTarget = players:FindFirstChild(selected)
-end)
-
-CombatTab:AddButton({
-    Title = "Refresh Players",
-    Callback = function()
-        local dropdown = Options.TargetDropdown
-        if dropdown then
-            dropdown:SetValues(getPlayerList())
-        end
-    end
-})
-
-CombatTab:AddButton({
-    Title = "Fire",
-    Callback = function()
-        if not SelectedTarget then
-            Fluent:Notify({
-                Title = "Error",
-                Content = "Select a target first!",
-                Duration = 3
-            })
-            return
-        end
-
-        if FireLoop then
-            FireLoop:Disconnect()
-            FireLoop = nil
-        end
-
-        FireLoop = RunService.Heartbeat:Connect(function()
-            if not SelectedTarget or not SelectedTarget.Character then return end
-
-            local head = SelectedTarget.Character:FindFirstChild("Head")
-            if not head then return end
-
-            local backpack = plr:FindFirstChild("Backpack")
-            if not backpack then return end
-
-            local gun = backpack:FindFirstChild("AK-74M")
-            if not gun then
-                gun = plr.Character and plr.Character:FindFirstChild("AK-74M")
-            end
-            if not gun then return end
-
-            local fireRemote = gun:FindFirstChild("Fire")
-            if not fireRemote then return end
-
-            local args = {
-                [1] = true,
-                [2] = head.Position,
-                [3] = false,
-                [4] = 12,
-            }
-
-            fireRemote:FireServer(unpack(args))
-        end)
-
-        Fluent:Notify({
-            Title = "Fire",
-            Content = "Firing at " .. SelectedTarget.Name,
-            Duration = 3
-        })
-    end
-})
-
-CombatTab:AddButton({
-    Title = "Stop Fire",
-    Callback = function()
-        if FireLoop then
-            FireLoop:Disconnect()
-            FireLoop = nil
         end
     end
 })
