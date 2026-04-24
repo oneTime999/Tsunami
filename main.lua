@@ -380,9 +380,10 @@ end
 
 local playerESPUpdate = nil
 local ZombieESPUpdate = nil
-local ProjectDeltaESPUpdate = nil
-local ProjectBetaESPUpdate = nil
-local ProjectAlphaESPUpdate = nil
+local ProjectESPUpdate = nil
+local InfStaminaLoop = nil
+local InfBagLoop = nil
+local LandminesLoop = nil
 
 ESPTab:CreateToggle({
     Name = "Items ESP",
@@ -477,102 +478,72 @@ ESPTab:CreateToggle({
 })
 
 ESPTab:CreateToggle({
-    Name = "Project Delta ESP",
+    Name = "Project ESP",
     CurrentValue = false,
-    Flag = "ProjectDeltaESP",
+    Flag = "ProjectESP",
     Callback = function(value)
         if value then
             scanProjectDelta()
-            if ProjectDeltaESPUpdate then ProjectDeltaESPUpdate:Disconnect() end
-            ProjectDeltaESPUpdate = RunService.Heartbeat:Connect(function()
+            scanProjectBeta()
+            scanProjectAlpha()
+            if ProjectESPUpdate then ProjectESPUpdate:Disconnect() end
+            ProjectESPUpdate = RunService.Heartbeat:Connect(function()
                 scanProjectDelta()
-                local f = workspace:FindFirstChild("Project Delta")
-                if not f then return end
-                for _, model in pairs(f:GetChildren()) do
-                    if model:FindFirstChild("ProjectDeltaESP_Folder") then
-                        local espFolder = model:FindFirstChild("ProjectDeltaESP_Folder")
-                        local bgui = espFolder:FindFirstChild("ProjectDeltaNameESP")
-                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                        if text and humanoid then
-                            text.Text = "[DELTA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                scanProjectBeta()
+                scanProjectAlpha()
+
+                local fd = workspace:FindFirstChild("Project Delta")
+                if fd then
+                    for _, model in pairs(fd:GetChildren()) do
+                        if model:FindFirstChild("ProjectDeltaESP_Folder") then
+                            local espFolder = model:FindFirstChild("ProjectDeltaESP_Folder")
+                            local bgui = espFolder:FindFirstChild("ProjectDeltaNameESP")
+                            local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                            local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                            if text and humanoid then
+                                text.Text = "[DELTA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                            end
+                        end
+                    end
+                end
+
+                local fb = workspace:FindFirstChild("Project Beta")
+                if fb then
+                    for _, model in pairs(fb:GetChildren()) do
+                        if model:FindFirstChild("ProjectBetaESP_Folder") then
+                            local espFolder = model:FindFirstChild("ProjectBetaESP_Folder")
+                            local bgui = espFolder:FindFirstChild("ProjectBetaNameESP")
+                            local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                            local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                            if text and humanoid then
+                                text.Text = "[BETA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                            end
+                        end
+                    end
+                end
+
+                local fa = workspace:FindFirstChild("Project Alpha")
+                if fa then
+                    for _, model in pairs(fa:GetChildren()) do
+                        if model:FindFirstChild("ProjectAlphaESP_Folder") then
+                            local espFolder = model:FindFirstChild("ProjectAlphaESP_Folder")
+                            local bgui = espFolder:FindFirstChild("ProjectAlphaNameESP")
+                            local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
+                            local humanoid = model:FindFirstChildWhichIsA("Humanoid")
+                            if text and humanoid then
+                                text.Text = "[ALPHA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
+                            end
                         end
                     end
                 end
             end)
         else
             clearProjectDeltaESP()
-            if ProjectDeltaESPUpdate then
-                ProjectDeltaESPUpdate:Disconnect()
-                ProjectDeltaESPUpdate = nil
-            end
-        end
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Project Beta ESP",
-    CurrentValue = false,
-    Flag = "ProjectBetaESP",
-    Callback = function(value)
-        if value then
-            scanProjectBeta()
-            if ProjectBetaESPUpdate then ProjectBetaESPUpdate:Disconnect() end
-            ProjectBetaESPUpdate = RunService.Heartbeat:Connect(function()
-                scanProjectBeta()
-                local f = workspace:FindFirstChild("Project Beta")
-                if not f then return end
-                for _, model in pairs(f:GetChildren()) do
-                    if model:FindFirstChild("ProjectBetaESP_Folder") then
-                        local espFolder = model:FindFirstChild("ProjectBetaESP_Folder")
-                        local bgui = espFolder:FindFirstChild("ProjectBetaNameESP")
-                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                        if text and humanoid then
-                            text.Text = "[BETA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
-                        end
-                    end
-                end
-            end)
-        else
             clearProjectBetaESP()
-            if ProjectBetaESPUpdate then
-                ProjectBetaESPUpdate:Disconnect()
-                ProjectBetaESPUpdate = nil
-            end
-        end
-    end
-})
-
-ESPTab:CreateToggle({
-    Name = "Project Alpha ESP",
-    CurrentValue = false,
-    Flag = "ProjectAlphaESP",
-    Callback = function(value)
-        if value then
-            scanProjectAlpha()
-            if ProjectAlphaESPUpdate then ProjectAlphaESPUpdate:Disconnect() end
-            ProjectAlphaESPUpdate = RunService.Heartbeat:Connect(function()
-                scanProjectAlpha()
-                local f = workspace:FindFirstChild("Project Alpha")
-                if not f then return end
-                for _, model in pairs(f:GetChildren()) do
-                    if model:FindFirstChild("ProjectAlphaESP_Folder") then
-                        local espFolder = model:FindFirstChild("ProjectAlphaESP_Folder")
-                        local bgui = espFolder:FindFirstChild("ProjectAlphaNameESP")
-                        local text = bgui and bgui:FindFirstChildWhichIsA("TextLabel")
-                        local humanoid = model:FindFirstChildWhichIsA("Humanoid")
-                        if text and humanoid then
-                            text.Text = "[ALPHA] " .. model.Name .. " : " .. tostring(math.floor(humanoid.Health))
-                        end
-                    end
-                end
-            end)
-        else
             clearProjectAlphaESP()
-            if ProjectAlphaESPUpdate then
-                ProjectAlphaESPUpdate:Disconnect()
-                ProjectAlphaESPUpdate = nil
+            if ProjectESPUpdate then
+                ProjectESPUpdate:Disconnect()
+                ProjectESPUpdate = nil
             end
         end
     end
@@ -664,39 +635,75 @@ MiscTab:CreateToggle({
     end
 })
 
-MiscTab:CreateButton({
+MiscTab:CreateToggle({
     Name = "Visible Landmines",
-    Callback = function()
-        local mineField = workspace:FindFirstChild("Minefield")
-        if mineField then
-            for _, part in pairs(mineField:GetChildren()) do
-                if part.Name == "Landmine" then
-                    part.Transparency = 0
+    CurrentValue = false,
+    Flag = "VisibleLandmines",
+    Callback = function(value)
+        if value then
+            if LandminesLoop then LandminesLoop:Disconnect() end
+            LandminesLoop = RunService.Heartbeat:Connect(function()
+                local mineField = workspace:FindFirstChild("Minefield")
+                if mineField then
+                    for _, part in pairs(mineField:GetChildren()) do
+                        if part.Name == "Landmine" then
+                            part.Transparency = 0
+                        end
+                    end
                 end
+            end)
+        else
+            if LandminesLoop then
+                LandminesLoop:Disconnect()
+                LandminesLoop = nil
             end
         end
     end
 })
 
-MiscTab:CreateButton({
+MiscTab:CreateToggle({
     Name = "Inf Stamina",
-    Callback = function()
-        local h = getHum()
-        if h then
-            h:SetAttribute("MaxStamina", math.huge)
-            h:SetAttribute("Stamina", math.huge)
+    CurrentValue = false,
+    Flag = "InfStamina",
+    Callback = function(value)
+        if value then
+            if InfStaminaLoop then InfStaminaLoop:Disconnect() end
+            InfStaminaLoop = RunService.Heartbeat:Connect(function()
+                local h = getHum()
+                if h then
+                    h:SetAttribute("MaxStamina", math.huge)
+                    h:SetAttribute("Stamina", math.huge)
+                end
+            end)
+        else
+            if InfStaminaLoop then
+                InfStaminaLoop:Disconnect()
+                InfStaminaLoop = nil
+            end
         end
     end
 })
 
-MiscTab:CreateButton({
+MiscTab:CreateToggle({
     Name = "Inf Bag",
-    Callback = function()
-        local h = getHum()
-        if h then
-            h:SetAttribute("BagSize", math.huge)
-            h:SetAttribute("MaxBagSize", math.huge)
-            h:SetAttribute("InventorySize", math.huge)
+    CurrentValue = false,
+    Flag = "InfBag",
+    Callback = function(value)
+        if value then
+            if InfBagLoop then InfBagLoop:Disconnect() end
+            InfBagLoop = RunService.Heartbeat:Connect(function()
+                local h = getHum()
+                if h then
+                    h:SetAttribute("BagSize", math.huge)
+                    h:SetAttribute("MaxBagSize", math.huge)
+                    h:SetAttribute("InventorySize", math.huge)
+                end
+            end)
+        else
+            if InfBagLoop then
+                InfBagLoop:Disconnect()
+                InfBagLoop = nil
+            end
         end
     end
 })
