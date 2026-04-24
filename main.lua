@@ -4,15 +4,15 @@ local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ManualFireUI"
+ScreenGui.Name = "FastManualFire"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0.5, -125, 0.5, -150)
-MainFrame.Size = UDim2.new(0, 250, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -160)
+MainFrame.Size = UDim2.new(0, 250, 0, 340)
 MainFrame.Active = true
 
 local Title = Instance.new("TextLabel")
@@ -21,58 +21,69 @@ Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Title.BorderSizePixel = 0
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Manual Fire"
+Title.Text = "Fire"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 
-local WeaponInput = Instance.new("TextBox")
-WeaponInput.Parent = MainFrame
-WeaponInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-WeaponInput.BorderSizePixel = 0
-WeaponInput.Position = UDim2.new(0.05, 0, 0.13, 0)
-WeaponInput.Size = UDim2.new(0.9, 0, 0, 30)
-WeaponInput.Font = Enum.Font.Gotham
-WeaponInput.Text = "AK-74M"
-WeaponInput.PlaceholderText = "Weapon Name..."
-WeaponInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-WeaponInput.TextSize = 14
+-- Seleção de Armas da Imagem
+local WeaponList = {"AK-74M", "AS-VAL", "CS5", "L106", "M27", "M4A1", "Minigun"}
+local SelectedWeapon = WeaponList[1]
 
-local RefreshButton = Instance.new("TextButton")
-RefreshButton.Parent = MainFrame
-RefreshButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-RefreshButton.BorderSizePixel = 0
-RefreshButton.Position = UDim2.new(0.05, 0, 0.25, 0)
-RefreshButton.Size = UDim2.new(0.9, 0, 0, 30)
-RefreshButton.Font = Enum.Font.Gotham
-RefreshButton.Text = "Refresh Players"
-RefreshButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-RefreshButton.TextSize = 13
+local WeaponScroll = Instance.new("ScrollingFrame")
+WeaponScroll.Parent = MainFrame
+WeaponScroll.Size = UDim2.new(0.9, 0, 0, 40)
+WeaponScroll.Position = UDim2.new(0.05, 0, 0.12, 0)
+WeaponScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+WeaponScroll.BorderSizePixel = 0
+WeaponScroll.CanvasSize = UDim2.new(2, 0, 0, 0)
+WeaponScroll.ScrollBarThickness = 2
+
+local WeaponLayout = Instance.new("UIListLayout")
+WeaponLayout.Parent = WeaponScroll
+WeaponLayout.FillDirection = Enum.FillDirection.Horizontal
+WeaponLayout.Padding = UDim.new(0, 5)
+
+for _, name in ipairs(WeaponList) do
+    local b = Instance.new("TextButton")
+    b.Parent = WeaponScroll
+    b.Size = UDim2.new(0, 70, 1, 0)
+    b.Text = name
+    b.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 10
+    b.MouseButton1Click:Connect(function()
+        SelectedWeapon = name
+        for _, v in ipairs(WeaponScroll:GetChildren()) do
+            if v:IsA("TextButton") then v.BackgroundColor3 = Color3.fromRGB(45, 45, 45) end
+        end
+        b.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    end)
+end
 
 local PlayerList = Instance.new("ScrollingFrame")
 PlayerList.Parent = MainFrame
 PlayerList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-PlayerList.BorderSizePixel = 0
-PlayerList.Position = UDim2.new(0.05, 0, 0.38, 0)
-PlayerList.Size = UDim2.new(0.9, 0, 0, 130)
+PlayerList.Position = UDim2.new(0.05, 0, 0.28, 0)
+PlayerList.Size = UDim2.new(0.9, 0, 0, 140)
 PlayerList.ScrollBarThickness = 3
 PlayerList.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.Parent = PlayerList
-ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 ListLayout.Padding = UDim.new(0, 4)
 
 local FireButton = Instance.new("TextButton")
 FireButton.Parent = MainFrame
 FireButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-FireButton.BorderSizePixel = 0
-FireButton.Position = UDim2.new(0.05, 0, 0.83, 0)
-FireButton.Size = UDim2.new(0.9, 0, 0, 45)
+FireButton.Position = UDim2.new(0.05, 0, 0.75, 0)
+FireButton.Size = UDim2.new(0.9, 0, 0, 60)
 FireButton.Font = Enum.Font.GothamBold
 FireButton.Text = "FIRE"
 FireButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FireButton.TextSize = 20
+FireButton.TextSize = 22
 
+-- Draggable Mobile
 local Dragging, DragInput, DragStart, StartPos
 Title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -93,49 +104,39 @@ end)
 
 local TargetPlayer = nil
 
-local function PopulateList()
-    for _, child in ipairs(PlayerList:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local PlayerBtn = Instance.new("TextButton")
-            PlayerBtn.Parent = PlayerList
-            PlayerBtn.Size = UDim2.new(1, 0, 0, 25)
-            PlayerBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-            PlayerBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            PlayerBtn.Font = Enum.Font.Gotham
-            PlayerBtn.TextSize = 12
-            PlayerBtn.Text = player.Name
-            PlayerBtn.BorderSizePixel = 0
-            
-            PlayerBtn.MouseButton1Click:Connect(function()
-                TargetPlayer = player
-                for _, btn in ipairs(PlayerList:GetChildren()) do
-                    if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(35, 35, 35) end
-                end
-                PlayerBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+local function Populate()
+    for _, child in ipairs(PlayerList:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then
+            local b = Instance.new("TextButton")
+            b.Parent = PlayerList
+            b.Size = UDim2.new(1, 0, 0, 25)
+            b.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+            b.Text = p.Name
+            b.TextColor3 = Color3.fromRGB(255, 255, 255)
+            b.Font = Enum.Font.Gotham
+            b.MouseButton1Click:Connect(function()
+                TargetPlayer = p
+                for _, v in ipairs(PlayerList:GetChildren()) do if v:IsA("TextButton") then v.BackgroundColor3 = Color3.fromRGB(35, 35, 35) end end
+                b.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
             end)
         end
     end
 end
 
-PopulateList()
-RefreshButton.MouseButton1Click:Connect(PopulateList)
+Populate()
 
-FireButton.MouseButton1Click:Connect(function()
-    if TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("Head") then
-        local WeaponName = WeaponInput.Text
-        local Weapon = LocalPlayer.Backpack:FindFirstChild(WeaponName) or LocalPlayer.Character:FindFirstChild(WeaponName)
-        
-        if Weapon and Weapon:FindFirstChild("Fire") then
-            local args = {
-                [1] = true,
-                [2] = TargetPlayer.Character.Head.Position,
-                [3] = false,
-                [4] = 12,
-            }
-            Weapon.Fire:FireServer(unpack(args))
+-- Disparo Instantâneo (InputBegan é mais rápido que MouseButton1Click)
+FireButton.InputBegan:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and TargetPlayer then
+        local char = TargetPlayer.Character
+        if char and char:FindFirstChild("Head") then
+            local pos = char.Head.Position
+            local tool = LocalPlayer.Backpack:FindFirstChild(SelectedWeapon) or LocalPlayer.Character:FindFirstChild(SelectedWeapon)
+            
+            if tool and tool:FindFirstChild("Fire") then
+                tool.Fire:FireServer(true, pos, false, 99)
+            end
         end
     end
 end)
