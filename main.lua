@@ -155,9 +155,8 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.RightShift
 })
 
-local ESPTab = Window:AddTab({ Title = "ESP", Icon = "eye" })
+local ESPTab = Window:AddTab({ Title = "Esp", Icon = "eye" })
 local MiscTab = Window:AddTab({ Title = "Misc", Icon = "settings" })
-local CombatTab = Window:AddTab({ Title = "Combat", Icon = "crosshair" })
 
 local Options = Fluent.Options
 
