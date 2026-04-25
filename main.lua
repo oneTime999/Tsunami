@@ -685,8 +685,9 @@ local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
+-- Criando a Interface Principal
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "FinalSpeedUI"
+ScreenGui.Name = "DirectHitUI"
 ScreenGui.Parent = CoreGui
 ScreenGui.ResetOnSpawn = false
 
@@ -697,6 +698,7 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -125, 0.5, -160)
 MainFrame.Size = UDim2.new(0, 250, 0, 360)
 MainFrame.Active = true
+MainFrame.Visible = true
 
 local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 8)
@@ -707,7 +709,7 @@ Title.Parent = MainFrame
 Title.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "ULTRA FIRE [R-SHIFT]"
+Title.Text = "DIRECT HIT [R-SHIFT]"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 
@@ -715,7 +717,7 @@ local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 8)
 TitleCorner.Parent = Title
 
--- Lista de Armas
+-- Lista de Armas baseada na sua imagem
 local WeaponList = {"AK-74M", "AS-VAL", "CS5", "L106", "M27", "M4A1", "Minigun"}
 local SelectedWeapon = WeaponList[1]
 
@@ -757,6 +759,7 @@ for _, name in ipairs(WeaponList) do
     end)
 end
 
+-- Lista de Jogadores
 local PlayerList = Instance.new("ScrollingFrame")
 PlayerList.Parent = MainFrame
 PlayerList.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -783,14 +786,14 @@ local FireCorner = Instance.new("UICorner")
 FireCorner.CornerRadius = UDim.new(0, 10)
 FireCorner.Parent = FireButton
 
--- Toggle Visibility (Keybind)
+-- Alternar Visibilidade (Keybind RightShift)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.RightShift then
         MainFrame.Visible = not MainFrame.Visible
     end
 end)
 
--- Draggable Logic
+-- Sistema para Arrastar (Mobile e PC)
 local Dragging, DragInput, DragStart, StartPos
 Title.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -843,18 +846,17 @@ Populate()
 Players.PlayerAdded:Connect(Populate)
 Players.PlayerRemoving:Connect(Populate)
 
--- Disparo Instantâneo de Alta Precisão
+-- Disparo na Posição Garantida (Sem predição)
 FireButton.InputBegan:Connect(function(input)
     if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and TargetPlayer then
-        local char = TargetPlayer.Character
-        local head = char and char:FindFirstChild("Head")
-        
-        if head then
-            local pos = head.Position
+        -- Pega a posição exata no momento do clique
+        if TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("Head") then
+            local currentHeadPos = TargetPlayer.Character.Head.Position
             local tool = LocalPlayer.Backpack:FindFirstChild(SelectedWeapon) or LocalPlayer.Character:FindFirstChild(SelectedWeapon)
             
             if tool and tool:FindFirstChild("Fire") then
-                tool.Fire:FireServer(true, pos, false, 999)
+                -- Envia a posição garantida diretamente para o Remote
+                tool.Fire:FireServer(true, currentHeadPos, false, 12)
             end
         end
     end
