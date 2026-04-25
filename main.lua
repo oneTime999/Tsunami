@@ -683,18 +683,22 @@ Fluent:Notify({
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
+-- Interface
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FastManualFire"
 ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -125, 0.5, -160)
-MainFrame.Size = UDim2.new(0, 250, 0, 340)
+MainFrame.Size = UDim2.new(0, 250, 0, 360)
 MainFrame.Active = true
 
 local Title = Instance.new("TextLabel")
@@ -703,11 +707,11 @@ Title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Title.BorderSizePixel = 0
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "Fire"
+Title.Text = "High Speed Fire"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 16
 
--- Seleção de Armas da Imagem
+-- Armas
 local WeaponList = {"AK-74M", "AS-VAL", "CS5", "L106", "M27", "M4A1", "Minigun"}
 local SelectedWeapon = WeaponList[1]
 
@@ -717,8 +721,9 @@ WeaponScroll.Size = UDim2.new(0.9, 0, 0, 40)
 WeaponScroll.Position = UDim2.new(0.05, 0, 0.12, 0)
 WeaponScroll.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 WeaponScroll.BorderSizePixel = 0
-WeaponScroll.CanvasSize = UDim2.new(2, 0, 0, 0)
+WeaponScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
 WeaponScroll.ScrollBarThickness = 2
+WeaponScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
 
 local WeaponLayout = Instance.new("UIListLayout")
 WeaponLayout.Parent = WeaponScroll
@@ -743,6 +748,7 @@ for _, name in ipairs(WeaponList) do
     end)
 end
 
+-- Lista de jogadores
 local PlayerList = Instance.new("ScrollingFrame")
 PlayerList.Parent = MainFrame
 PlayerList.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -755,39 +761,103 @@ local ListLayout = Instance.new("UIListLayout")
 ListLayout.Parent = PlayerList
 ListLayout.Padding = UDim.new(0, 4)
 
+-- Info do alvo
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Parent = MainFrame
+InfoLabel.Position = UDim2.new(0.05, 0, 0.68, 0)
+InfoLabel.Size = UDim2.new(0.9, 0, 0, 20)
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.Text = "Alvo: Nenhum"
+InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.TextSize = 12
+InfoLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Botão de disparo
 local FireButton = Instance.new("TextButton")
 FireButton.Parent = MainFrame
 FireButton.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 FireButton.Position = UDim2.new(0.05, 0, 0.75, 0)
 FireButton.Size = UDim2.new(0.9, 0, 0, 60)
 FireButton.Font = Enum.Font.GothamBold
-FireButton.Text = "Fire"
+FireButton.Text = "TAP TO FIRE"
 FireButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 FireButton.TextSize = 22
+FireButton.AutoButtonColor = true
 
--- Draggable Mobile
-local Dragging, DragInput, DragStart, StartPos
-Title.InputBegan:Connect(function(input)
+-- Draggable corrigido (mobile + PC)
+local Dragging, DragStart, StartPos
+local function StartDrag(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         Dragging = true
         DragStart = input.Position
         StartPos = MainFrame.Position
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then Dragging = false end
+            if input.UserInputState == Enum.UserInputState.End then
+                Dragging = false
+            end
         end)
     end
-end)
-UserInputService.InputChanged:Connect(function(input)
+end
+
+local function UpdateDrag(input)
     if Dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local Delta = input.Position - DragStart
-        MainFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
+        MainFrame.Position = UDim2.new(
+            StartPos.X.Scale, StartPos.X.Offset + Delta.X,
+            StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y
+        )
     end
-end)
+end
 
+Title.InputBegan:Connect(StartDrag)
+UserInputService.InputChanged:Connect(UpdateDrag)
+
+-- Sistema de alvo
 local TargetPlayer = nil
 
-local function Populate()
-    for _, child in ipairs(PlayerList:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+local function IsAlive(character)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    return humanoid and humanoid.Health > 0
+end
+
+local function GetTargetPosition(character)
+    -- Pega a posição mais precisa possível
+    local head = character:FindFirstChild("Head")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    
+    if head then
+        return head.Position
+    elseif hrp then
+        return hrp.Position
+    end
+    return nil
+end
+
+local function GetPredictedPosition(character)
+    local head = character:FindFirstChild("Head")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    
+    if not head then return nil end
+    
+    local basePos = head.Position
+    if hrp then
+        -- Predição simples: posição atual + velocidade * tempo de viagem estimado
+        local velocity = hrp.AssemblyLinearVelocity
+        -- Ajuste o multiplicador conforme a velocidade das balas do jogo
+        local predictionMultiplier = 0.05 
+        basePos = basePos + (velocity * predictionMultiplier)
+    end
+    
+    return basePos
+end
+
+local function PopulateList()
+    -- Limpa lista
+    for _, child in ipairs(PlayerList:GetChildren()) do
+        if child:IsA("TextButton") then child:Destroy() end
+    end
+    
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then
             local b = Instance.new("TextButton")
@@ -797,27 +867,118 @@ local function Populate()
             b.Text = p.Name
             b.TextColor3 = Color3.fromRGB(255, 255, 255)
             b.Font = Enum.Font.Gotham
+            b.TextSize = 12
+            
             b.MouseButton1Click:Connect(function()
                 TargetPlayer = p
-                for _, v in ipairs(PlayerList:GetChildren()) do if v:IsA("TextButton") then v.BackgroundColor3 = Color3.fromRGB(35, 35, 35) end end
+                InfoLabel.Text = "Alvo: " .. p.Name
+                for _, v in ipairs(PlayerList:GetChildren()) do
+                    if v:IsA("TextButton") then
+                        v.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                    end
+                end
                 b.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
             end)
         end
     end
 end
 
-Populate()
+-- Atualiza lista quando jogadores entram/saem
+Players.PlayerAdded:Connect(function()
+    task.wait(0.5)
+    PopulateList()
+end)
+Players.PlayerRemoving:Connect(PopulateList)
+PopulateList()
 
--- Disparo Instantâneo (InputBegan é mais rápido que MouseButton1Click)
+-- Sistema de disparo corrigido
+local function FireAtTarget()
+    if not TargetPlayer then
+        InfoLabel.Text = "Alvo: Nenhum"
+        return
+    end
+    
+    local char = TargetPlayer.Character
+    if not char or not IsAlive(char) then
+        InfoLabel.Text = "Alvo: Morto/Inválido"
+        return
+    end
+    
+    -- Pega posição PREDITA (resolve o problema de alvos em movimento)
+    local pos = GetPredictedPosition(char)
+    if not pos then
+        InfoLabel.Text = "Alvo: Sem posição"
+        return
+    end
+    
+    -- Procura a arma no backpack ou character
+    local tool = LocalPlayer.Backpack:FindFirstChild(SelectedWeapon) 
+        or LocalPlayer.Character:FindFirstChild(SelectedWeapon)
+    
+    if not tool then
+        InfoLabel.Text = "Arma não encontrada: " .. SelectedWeapon
+        return
+    end
+    
+    -- Se a arma estiver no backpack, equipa automaticamente
+    if tool.Parent == LocalPlayer.Backpack and LocalPlayer.Character then
+        local humanoid = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid:EquipTool(tool)
+            task.wait(0.05) -- Pequeno delay para equipar
+        end
+    end
+    
+    -- Re-verifica se a arma está equipada e tem o remote
+    tool = LocalPlayer.Character:FindFirstChild(SelectedWeapon)
+    if not tool then return end
+    
+    local fireRemote = tool:FindFirstChild("Fire")
+    if not fireRemote or not fireRemote:IsA("RemoteEvent") then
+        InfoLabel.Text = "Remote 'Fire' não encontrado"
+        return
+    end
+    
+    -- Dispara com posição predita
+    -- true = segurando o botão (modo automático), pos, false, 12
+    fireRemote:FireServer(true, pos, false, 12)
+    
+    InfoLabel.Text = "Disparando em: " .. TargetPlayer.Name
+end
+
+-- InputBegan para resposta instantânea
 FireButton.InputBegan:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1) and TargetPlayer then
-        local char = TargetPlayer.Character
-        if char and char:FindFirstChild("Head") then
-            local pos = char.Head.Position
-            local tool = LocalPlayer.Backpack:FindFirstChild(SelectedWeapon) or LocalPlayer.Character:FindFirstChild(SelectedWeapon)
-            
-            if tool and tool:FindFirstChild("Fire") then
-                tool.Fire:FireServer(true, pos, false, 12)
+    if input.UserInputType == Enum.UserInputType.Touch 
+        or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        
+        -- Evita disparo acidental durante drag
+        if Dragging then return end
+        
+        FireAtTarget()
+    end
+end)
+
+-- Atalho de teclado (opcional) - tecla F
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F and TargetPlayer then
+        FireAtTarget()
+    end
+end)
+
+-- Auto-limpar alvo se ele morrer/sair
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if TargetPlayer then
+            if not TargetPlayer.Parent or not TargetPlayer.Character or not IsAlive(TargetPlayer.Character) then
+                TargetPlayer = nil
+                InfoLabel.Text = "Alvo: Nenhum"
+                for _, v in ipairs(PlayerList:GetChildren()) do
+                    if v:IsA("TextButton") then
+                        v.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+                    end
+                end
             end
         end
     end
